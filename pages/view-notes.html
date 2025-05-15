@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Notes for Jimli 💌</title>
+  <link rel="stylesheet" href="../style.css" />
+  <style>
+    body {
+      background-color: #fff0f5;
+      font-family: 'Shadows Into Light', cursive;
+      color: #333;
+      margin: 0;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 3rem;
+      color: #ff69b4;
+      margin-bottom: 1rem;
+    }
+
+    .note-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+      padding: 0 1rem;
+    }
+
+    .note-card {
+      background-color: #fff;
+      border: 2px dashed #ffa6c9;
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .note-card h3 {
+      color: #c94f7c;
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+      font-size: 1.3rem;
+    }
+
+    .note-card p {
+      font-size: 1rem;
+      color: #555;
+    }
+
+    .loading {
+      font-size: 1.2rem;
+      margin-top: 3rem;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Notes for Jimli 💕</h1>
+  <p class="loading" id="loading">Loading heartfelt notes...</p>
+
+  <div class="note-grid" id="noteGrid"></div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC0NUL_M4erIQ-XAdpgiga9SCBtjFawkDg",
+      authDomain: "jimliturnstwenty.firebaseapp.com",
+      projectId: "jimliturnstwenty",
+      storageBucket: "jimliturnstwenty.firebasestorage.app",
+      messagingSenderId: "208642834505",
+      appId: "1:208642834505:web:935636174185cb4f45ff98",
+      measurementId: "G-SQ2XJXDNBT"
+    };
+
+    const password = "jimlissecret20"; // your secret password
+    const hint = "Hint: It’s your special birthday secret! 🎂";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const noteGrid = document.getElementById('noteGrid');
+    const loading = document.getElementById('loading');
+
+    async function loadNotes() {
+      try {
+        const querySnapshot = await getDocs(collection(db, "birthdayNotes"));
+        loading.style.display = 'none';
+
+        if (querySnapshot.empty) {
+          noteGrid.innerHTML = `<p>No notes yet 😢</p>`;
+          return;
+        }
+
+        let index = 0;
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const noteCard = document.createElement('div');
+          noteCard.className = 'note-card';
+          noteCard.style.animationDelay = `${index * 0.1}s`;  // fade delay
+          noteCard.innerHTML = `
+            <h3>💌 ${data.name}</h3>
+            <p>${data.message}</p>
+          `;
+          noteGrid.appendChild(noteCard);
+          index++;
+        });
+      } catch (error) {
+        console.error("Error loading notes:", error);
+        loading.textContent = "Failed to load notes. Try again later.";
+      }
+    }
+
+    window.onload = () => {
+      const userPass = prompt(`Enter password to view Jimli's notes:\n\n${hint}`);
+      if (userPass !== password) {
+        alert("Sorry, wrong password!");
+        document.body.innerHTML = "<h2>Access Denied</h2>";
+      } else {
+        loadNotes();
+      }
+    };
+  </script>
+
+</body>
+</html>

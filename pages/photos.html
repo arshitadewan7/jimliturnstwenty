@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Photo Gallery</title>
+  <link rel="stylesheet" href="../style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>📸 Birthday Photo Gallery</h1>
+    <p>Add your fun photos from Jimli's birthday!</p>
+    <input type="file" accept="image/*" multiple><br><br>
+    <div class="gallery">
+      <!-- Sample placeholder -->
+      <img src="../assets/images/sample-photo.png" alt="sample">
+    </div>
+    <a href="../index.html">← Back to Home</a>
+  </div>
+
+  <script type="module">
+  import { uploadToCloudinary } from '../scripts/cloudinaryUpload.js';
+
+  const form = document.getElementById('photoForm');
+  const status = document.getElementById('uploadStatus');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const file = document.getElementById('photoInput').files[0];
+    const uploader = document.getElementById('uploaderName').value.trim();
+
+    if (!file) {
+      status.textContent = "❌ Please choose a file.";
+      return;
+    }
+
+    status.textContent = "Uploading...";
+
+    const result = await uploadToCloudinary(file);
+    if (result.success) {
+      status.textContent = "✅ Photo uploaded!";
+      form.reset();
+
+      // Optional: Save photo URL + uploader info to Firestore
+      // (to display photos later in gallery)
+      // Use your firebase.js Firestore addDoc code here if needed
+
+    } else {
+      status.textContent = `❌ Upload failed: ${result.error}`;
+    }
+  });
+</script>
+
+</body>
+</html>

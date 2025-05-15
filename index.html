@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>jimliturnstwenty 🎂</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Shadows+Into+Light&family=Amatic+SC:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    /* Full screen overlay */
+    #ribbonOverlay {
+      position: fixed;
+      inset: 0;
+      background: #ffe4e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      z-index: 9999;
+      user-select: none;
+    }
+
+    /* Ribbon container */
+    .ribbon-container {
+      position: relative;
+      width: 100vw;
+      height: 80px;
+      background: transparent;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: visible;
+    }
+
+    /* Ribbon halves */
+    .ribbon-half {
+      position: absolute;
+      top: 50%;
+      width: 50vw;
+      height: 40px;
+      background: linear-gradient(90deg, #ff4b6e, #ff758f);
+      border-radius: 20px;
+      box-shadow: 0 4px 8px rgba(255, 75, 110, 0.6);
+      transform: translateY(-50%);
+      transition: transform 1s ease;
+      z-index: 10;
+    }
+
+    /* Left half: initially on left side */
+    .ribbon-left {
+      left: 0;
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+    }
+
+    /* Right half: initially on right side */
+    .ribbon-right {
+      right: 0;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 0% 100%);
+    }
+
+    /* After cut: halves slide out */
+    .cut .ribbon-left {
+      transform: translate(calc(-50vw - 20px), -50%);
+    }
+
+    .cut .ribbon-right {
+      transform: translate(calc(50vw + 20px), -50%);
+    }
+
+    /* Scissors icon */
+    #scissors {
+      position: relative;
+      width: 80px;
+      height: 80px;
+      cursor: pointer;
+      z-index: 20;
+      user-select: none;
+      transition: transform 0.3s ease;
+    }
+    #scissors:hover {
+      transform: scale(1.1);
+    }
+
+    /* Confetti container */
+    #confetti {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: visible;
+      z-index: 9998;
+      display: none;
+    }
+
+    /* Confetti piece */
+    .confetti-piece {
+      position: absolute;
+      width: 8px;
+      height: 14px;
+      background-color: red;
+      opacity: 0.9;
+      transform-origin: center;
+      animation: confetti-fall 3s forwards;
+    }
+
+    /* Confetti colors */
+    .confetti-piece.red { background-color: #ff4b6e; }
+    .confetti-piece.pink { background-color: #ff758f; }
+    .confetti-piece.yellow { background-color: #ffea64; }
+    .confetti-piece.blue { background-color: #6bcfff; }
+
+    /* Confetti fall animation */
+    @keyframes confetti-fall {
+      0% {
+        opacity: 1;
+        transform: translateY(0) rotate(0deg);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(300px) rotate(360deg);
+      }
+    }
+
+    #cutButton {
+      padding: 10px 30px;
+      font-size: 1.4rem;
+      font-family: 'Amatic SC', cursive;
+      color: #ff4b6e;
+      background: #fff0f5;
+      border: 3px solid #ff4b6e;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      user-select: none;
+    }
+    #cutButton:hover {
+      background: #ff4b6e;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <!-- Ribbon Overlay -->
+<div id="ribbonOverlay">
+  <div class="ribbon-container" id="ribbonContainer">
+    <div class="ribbon-half ribbon-left"></div>
+    <svg id="scissors" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" title="Cut Ribbon">
+      <path d="M10 54L54 10M54 54L10 10" stroke="#ff4b6e" stroke-width="5" stroke-linecap="round"/>
+      <circle cx="18" cy="18" r="6" stroke="#ff4b6e" stroke-width="5"/>
+      <circle cx="46" cy="46" r="6" stroke="#ff4b6e" stroke-width="5"/>
+    </svg>
+    <div class="ribbon-half ribbon-right"></div>
+  </div>
+  <button id="cutButton" style="margin-top: 20px; font-family: 'Amatic SC', cursive; font-size: 1.5rem; padding: 10px 20px; border: 3px solid #ff4b6e; border-radius: 20px; background: #fff0f5; color: #ff4b6e; cursor: pointer;">
+    Cut Ribbon ✂️
+  </button>
+</div>
+
+<!-- Confetti container -->
+<div id="confetti"></div>
+
+  <!-- Your actual page content -->
+  <div class="container" style="display:none;" id="mainContent">
+    <h1>🎉 Happy 20th, Jimli! 🎂</h1>
+    <p class="intro">This is a digital slambook full of love, memories, and music.</p>
+
+    <nav>
+      <a href="pages/notes.html">📝 Notes</a>
+      <a href="pages/photos.html">📸 Photo Gallery</a>
+      <a href="pages/playlist.html">🎶 Playlist</a>
+      <a href="pages/timecapsule.html">⏳ Time Capsule</a>
+    </nav>
+
+    <img src="assets/images/stickers.png" class="decor" alt="decorative stickers" />
+    <!-- Footer area -->
+    <footer style="margin-top: 4rem; display: flex; justify-content: center;">
+    <a href="pages/view-notes.html" class="nav-link">📖 View All Notes</a>
+    </footer>
+  </div>
+
+  <script>
+    // const ribbon = document.getElementById('ribbon');
+    const cutButton = document.getElementById('cutButton');
+    const ribbonContainer = document.getElementById('ribbonContainer');
+    const ribbonOverlay = document.getElementById('ribbonOverlay');
+    const confettiContainer = document.getElementById('confetti');
+    const mainContent = document.getElementById('mainContent');
+
+    // Confetti generator
+  function createConfetti() {
+    const colors = ['red', 'pink', 'yellow', 'blue'];
+    const count = 80;
+
+    confettiContainer.style.display = 'block';
+
+    for(let i = 0; i < count; i++) {
+      const confetti = document.createElement('div');
+      confetti.classList.add('confetti-piece');
+      confetti.classList.add(colors[Math.floor(Math.random() * colors.length)]);
+      confetti.style.left = Math.random() * window.innerWidth + 'px';
+      confetti.style.top = Math.random() * -100 + 'px';
+      confetti.style.animationDelay = (Math.random() * 2) + 's';
+      confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+      confettiContainer.appendChild(confetti);
+
+      // Remove confetti after animation
+      confetti.addEventListener('animationend', () => {
+        confetti.remove();
+      });
+    }
+  }
+
+  // Check sessionStorage on load
+window.onload = () => {
+  if (sessionStorage.getItem('ribbonCut') === 'true') {
+    ribbonOverlay.style.display = 'none';
+    mainContent.style.display = 'block';
+  }
+};
+
+
+    cutButton.onclick = () => {
+  sessionStorage.setItem('ribbonCut', 'true'); // <-- Save flag
+
+  ribbonContainer.classList.add('cut');
+  cutButton.disabled = true;
+  cutButton.style.cursor = 'default';
+
+  const scissors = document.getElementById('scissors');
+  scissors.style.transition = 'transform 0.3s ease';
+  scissors.style.transform = 'scale(1.3) rotate(-15deg)';
+  setTimeout(() => {
+    scissors.style.transform = 'scale(1) rotate(0deg)';
+  }, 300);
+
+  setTimeout(() => {
+    createConfetti();
+    setTimeout(() => {
+      ribbonOverlay.style.display = 'none';
+      mainContent.style.display = 'block';
+    }, 800);
+  }, 400);
+};
+
+  </script>
+</body>
+</html>
