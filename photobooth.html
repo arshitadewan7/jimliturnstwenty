@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Photobooth - JimliTurnsTwenty 🎂</title>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Shadows+Into+Light&family=Amatic+SC:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: 'Amatic SC', cursive;
+      background: #fff0f5;
+      color: #ff4b6e;
+      text-align: center;
+      padding: 2rem;
+      position: relative;
+    }
+    .video-container {
+      position: relative;
+      display: inline-block;
+      width: 100%;
+      max-width: 400px;
+    }
+    video {
+      width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(255,75,110,0.4);
+      display: block;
+    }
+    button, .filter-btn {
+      margin: 1rem 0.5rem 1rem 0.5rem;
+      padding: 10px 25px;
+      font-size: 1.3rem;
+      border: 3px solid #ff4b6e;
+      border-radius: 25px;
+      background: white;
+      color: #ff4b6e;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      user-select: none;
+    }
+    button:hover:enabled, .filter-btn:hover {
+      background: #ff4b6e;
+      color: white;
+    }
+    #photo {
+      margin-top: 1rem;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(255,75,110,0.4);
+      transition: filter 0.3s ease;
+    }
+    .filters {
+      margin-top: 1rem;
+    }
+    .nav-link {
+      display: inline-block;
+      margin-top: 2rem;
+    }
+    /* Countdown overlay styles */
+    #countdown-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 6rem;
+      color: #ff4b6e;
+      font-weight: bold;
+      pointer-events: none;
+      user-select: none;
+      text-shadow: 0 0 10px white;
+      font-family: 'Amatic SC', cursive;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 12px;
+      z-index: 10;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎥 Live Photobooth</h1>
+  
+  <div class="video-container">
+    <video id="video" autoplay playsinline muted></video>
+    <div id="countdown-overlay"></div>
+  </div>
+
+  <br />
+  <button id="snap">Take Photo</button>
+  <br />
+  <canvas id="canvas" style="display:none;"></canvas>
+  <img id="photo" alt="Your photo will appear here" />
+  
+  <div class="filters">
+    <button class="filter-btn" data-filter="none">Original</button>
+    <button class="filter-btn" data-filter="sepia(0.6) contrast(1.2)">Sepia</button>
+    <button class="filter-btn" data-filter="brightness(1.3) saturate(1.5)">Bright</button>
+    <button class="filter-btn" data-filter="grayscale(0.7) blur(1px)">Dreamy</button>
+    <button class="filter-btn" data-filter="hue-rotate(270deg) saturate(2)">Pink Glow</button>
+  </div>
+
+  <button id="download" disabled>Download Photo</button>
+
+  <br />
+  <a href="index.html" class="nav-link">← Back to Home</a>
+
+  <script>
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const photo = document.getElementById('photo');
+    const snap = document.getElementById('snap');
+    const downloadBtn = document.getElementById('download');
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    const countdownOverlay = document.getElementById('countdown-overlay');
+
+    let currentFilter = 'none';
+
+    // Get camera feed
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        video.srcObject = stream;
+      })
+      .catch(err => {
+        alert('Error accessing camera. Please allow camera permissions and refresh.');
+        console.error(err);
+      });
+
+    snap.addEventListener('click', () => {
+      snap.disabled = true; // disable button during countdown
+      let counter = 3;
+      countdownOverlay.textContent = counter;
+      countdownOverlay.style.display = 'flex';
+
+      const countdownInterval = setInterval(() => {
+        counter--;
+        if (counter > 0) {
+          countdownOverlay.textContent = counter;
+        } else {
+          clearInterval(countdownInterval);
+          countdownOverlay.style.display = 'none';
+
+          // Take the photo after countdown ends
+          const context = canvas.getContext('2d');
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+
+          context.filter = currentFilter;
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+          photo.src = canvas.toDataURL('image/png');
+          downloadBtn.disabled = false;
+          snap.disabled = false; // enable button again
+        }
+      }, 1000);
+    });
+
+    filterButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentFilter = btn.getAttribute('data-filter');
+        video.style.filter = currentFilter;  // live preview
+        photo.style.filter = currentFilter;  // preview on photo
+      });
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      if (!photo.src) return;
+
+      const link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = 'jimli_photo.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    });
+  </script>
+</body>
+</html>

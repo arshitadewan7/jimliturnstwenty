@@ -6,6 +6,50 @@
   <link rel="stylesheet" href="style.css" />
   <link href="https://fonts.googleapis.com/css2?family=Shadows+Into+Light&family=Amatic+SC:wght@700&display=swap" rel="stylesheet" />
   <style>
+    /* Photobooth styles */
+    #photobooth {
+      margin-top: 3rem;
+      padding: 1rem;
+      border: 3px solid #ff4b6e;
+      border-radius: 20px;
+      max-width: 400px;
+      background: #fff0f5;
+      font-family: 'Amatic SC', cursive;
+      color: #ff4b6e;
+      text-align: center;
+      user-select: none;
+    }
+
+    #photobooth video {
+      width: 100%;
+      border-radius: 15px;
+      box-shadow: 0 0 10px rgba(255, 75, 110, 0.5);
+    }
+
+    #photobooth button {
+      margin-top: 10px;
+      padding: 10px 25px;
+      font-size: 1.4rem;
+      cursor: pointer;
+      border: 3px solid #ff4b6e;
+      border-radius: 25px;
+      background: white;
+      color: #ff4b6e;
+      transition: background 0.3s ease;
+    }
+    #photobooth button:hover {
+      background: #ff4b6e;
+      color: white;
+    }
+
+    #snapshot {
+      margin-top: 10px;
+      max-width: 100%;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(255, 75, 110, 0.7);
+      display: none;
+    }
+
     /* Full screen overlay */
     #ribbonOverlay {
       position: fixed;
@@ -171,9 +215,14 @@
       <a href="pages/photos.html">📸 Photo Gallery</a>
       <a href="pages/playlist.html">🎶 Playlist</a>
       <a href="pages/timecapsule.html">⏳ Time Capsule</a>
+      <a href="photobooth.html" class="nav-link">Photobooth</a>
+
     </nav>
 
     <img src="assets/images/stickers.png" class="decor" alt="decorative stickers" />
+
+
+
     <!-- Footer area -->
     <footer style="margin-top: 4rem; display: flex; justify-content: center;">
     <a href="pages/view-notes.html" class="nav-link">📖 View All Notes</a>
@@ -222,7 +271,7 @@ window.onload = () => {
 
 
     cutButton.onclick = () => {
-  sessionStorage.setItem('ribbonCut', 'true'); // <-- Save flag
+  sessionStorage.setItem('ribbonCut', 'true');
 
   ribbonContainer.classList.add('cut');
   cutButton.disabled = true;
@@ -240,9 +289,58 @@ window.onload = () => {
     setTimeout(() => {
       ribbonOverlay.style.display = 'none';
       mainContent.style.display = 'block';
-    }, 800);
-  }, 400);
+    }, 1000); // Show main content after confetti
+  }, 1000); // Let ribbon halves slide first
 };
+
+
+// Photobooth JS
+    const video = document.getElementById('video');
+    const snapBtn = document.getElementById('snap');
+    const canvas = document.getElementById('canvas');
+    const snapshot = document.getElementById('snapshot');
+
+    // Access webcam and stream to video element
+    function startCamera() {
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+          .then(stream => {
+            video.srcObject = stream;
+          })
+          .catch(err => {
+            alert('Error accessing webcam: ' + err.message);
+          });
+      } else {
+        alert('getUserMedia not supported on your browser.');
+      }
+    }
+
+    // Capture a snapshot from video and show it
+    snapBtn.onclick = () => {
+      const context = canvas.getContext('2d');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataURL = canvas.toDataURL('image/png');
+      snapshot.src = dataURL;
+      snapshot.style.display = 'block';
+    };
+
+    // Start the camera once main content is visible (after ribbon cut)
+    window.onload = () => {
+      if (sessionStorage.getItem('ribbonCut') === 'true') {
+        ribbonOverlay.style.display = 'none';
+        mainContent.style.display = 'block';
+        startCamera(); // start photobooth webcam
+      }
+    };
+
+    // Also start camera if ribbon is already cut (if page is reloaded)
+    if (sessionStorage.getItem('ribbonCut') === 'true') {
+      startCamera();
+    }
+
+
 
   </script>
 </body>
