@@ -73,67 +73,51 @@
 
   <div class="note-grid" id="noteGrid"></div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-    const firebaseConfig = {
-      apiKey: "AIzaSyC0NUL_M4erIQ-XAdpgiga9SCBtjFawkDg",
-      authDomain: "jimliturnstwenty.firebaseapp.com",
-      projectId: "jimliturnstwenty",
-      storageBucket: "jimliturnstwenty.firebasestorage.app",
-      messagingSenderId: "208642834505",
-      appId: "1:208642834505:web:935636174185cb4f45ff98",
-      measurementId: "G-SQ2XJXDNBT"
-    };
-
-    const password = "jimlissecret20"; // your secret password
-    const hint = "Hint: It’s your special birthday secret! 🎂";
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  <!-- Add Supabase JS library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://klnopxnruagklreaokdc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtsbm9weG5ydWFna2xyZWFva2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2NzY2OTUsImV4cCI6MjA2MzI1MjY5NX0.eKHGjD1_y6V2Bf3aiErcU6lDdoh7EnVuv4OIXu1oKwg';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const noteGrid = document.getElementById('noteGrid');
     const loading = document.getElementById('loading');
 
-    async function loadNotes() {
+    async function fetchNotes() {
       try {
-        const querySnapshot = await getDocs(collection(db, "birthdayNotes"));
+        const { data, error } = await supabase.from('notes').select('*').order('created_at', { ascending: false });
         loading.style.display = 'none';
-
-        if (querySnapshot.empty) {
-          noteGrid.innerHTML = `<p>No notes yet 😢</p>`;
+        if (error) {
+          console.error('Error:', error);
+          noteGrid.innerHTML = '<p>Error loading notes.</p>';
           return;
         }
-
-        let index = 0;
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
+        if (!data || data.length === 0) {
+          noteGrid.innerHTML = '<p>No notes yet 😢</p>';
+          return;
+        }
+        noteGrid.innerHTML = '';
+        data.forEach((note, index) => {
           const noteCard = document.createElement('div');
           noteCard.className = 'note-card';
-          noteCard.style.animationDelay = `${index * 0.1}s`;  // fade delay
+          noteCard.style.animationDelay = `${index * 0.1}s`;
           noteCard.innerHTML = `
-            <h3>💌 ${data.name}</h3>
-            <p>${data.message}</p>
+            <h3>💌 ${note.name}</h3>
+            <p>${note.message}</p>
           `;
           noteGrid.appendChild(noteCard);
-          index++;
         });
-      } catch (error) {
-        console.error("Error loading notes:", error);
-        loading.textContent = "Failed to load notes. Try again later.";
+      } catch (err) {
+        console.error('Error:', err);
+        noteGrid.innerHTML = '<p>Error loading notes.</p>';
       }
     }
 
-    window.onload = () => {
-      const userPass = prompt(`Enter password to view Jimli's notes:\n\n${hint}`);
-      if (userPass !== password) {
-        alert("Sorry, wrong password!");
-        document.body.innerHTML = "<h2>Access Denied</h2>";
-      } else {
-        loadNotes();
-      }
-    };
+    fetchNotes();
+    // Optional: Real-time updates
+    supabase.channel('public:notes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notes' }, fetchNotes)
+      .subscribe();
   </script>
 
 </body>

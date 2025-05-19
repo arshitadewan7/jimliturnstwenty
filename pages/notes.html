@@ -20,24 +20,36 @@
     <a href="../index.html">← Back to Home</a>
   </section>
 
-  <!-- Your firebase form script -->
-  <script type="module">
-    import { submitNote } from '../scripts/firebase.js';
+  <!-- Add Supabase JS library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://klnopxnruagklreaokdc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtsbm9weG5ydWFna2xyZWFva2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2NzY2OTUsImV4cCI6MjA2MzI1MjY5NX0.eKHGjD1_y6V2Bf3aiErcU6lDdoh7EnVuv4OIXu1oKwg';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const form = document.getElementById('noteForm');
     const status = document.getElementById('submitStatus');
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const name = form.name.value.trim();
-      const message = form.message.value.trim();
-
-      const success = await submitNote(name, message);
-      if (success) {
-        status.textContent = "✅ Note sent!";
-        form.reset();
-      } else {
-        status.textContent = "❌ Failed to send note. Try again.";
+      const name = document.getElementById('name').value.trim();
+      const message = document.getElementById('message').value.trim();
+      if (!name || !message) {
+        status.textContent = '❌ Please fill in both fields.';
+        return;
+      }
+      try {
+        const { error } = await supabase.from('notes').insert([{ name, message }]);
+        if (error) {
+          console.error('Error:', error);
+          status.textContent = '❌ Failed to send note. Try again.';
+        } else {
+          status.textContent = '✅ Note sent!';
+          form.reset();
+        }
+      } catch (err) {
+        console.error('Error:', err);
+        status.textContent = '❌ Failed to send note. Try again.';
       }
     });
   </script>
