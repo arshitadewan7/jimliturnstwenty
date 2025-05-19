@@ -4,51 +4,194 @@
   <meta charset="UTF-8">
   <title>Photo Gallery</title>
   <link rel="stylesheet" href="../style.css">
+  <style>
+    .upload-form {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .upload-form input[type="text"],
+    .upload-form input[type="file"] {
+      width: 100%;
+      margin: 10px 0;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .upload-form button {
+      width: 100%;
+      padding: 10px;
+      background: #ff69b4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .upload-form button:hover {
+      background: #ff4da6;
+    }
+    #uploadStatus {
+      margin-top: 10px;
+      text-align: center;
+    }
+    .preview-image {
+      max-width: 200px;
+      margin-top: 10px;
+      border-radius: 8px;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
     <h1>📸 Birthday Photo Gallery</h1>
     <p>Add your fun photos from Jimli's birthday!</p>
-    <input type="file" accept="image/*" multiple><br><br>
-    <div class="gallery">
-      <!-- Sample placeholder -->
-      <img src="../assets/images/sample-photo.png" alt="sample">
+    
+    <form id="photoForm" class="upload-form">
+      <input type="text" id="uploaderName" placeholder="Your Name" required>
+      <input type="file" id="photoInput" accept="image/*" required>
+      <img id="preview" class="preview-image" style="display: none;">
+      <button type="submit">Upload Photo</button>
+    </form>
+    <p id="uploadStatus"></p>
+    
+    <div class="gallery" id="photoGallery">
+      <!-- Photos will be displayed here -->
     </div>
     <a href="../index.html">← Back to Home</a>
   </div>
 
-  <script type="module">
-  import { uploadToCloudinary } from '../scripts/cloudinaryUpload.js';
+  <!-- Add Supabase JS library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://klnopxnruagklreaokdc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtsbm9weG5ydWFna2xyZWFva2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2NzY2OTUsImV4cCI6MjA2MzI1MjY5NX0.eKHGjD1_y6V2Bf3aiErcU6lDdoh7EnVuv4OIXu1oKwg';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const form = document.getElementById('photoForm');
-  const status = document.getElementById('uploadStatus');
+    const form = document.getElementById('photoForm');
+    const status = document.getElementById('uploadStatus');
+    const preview = document.getElementById('preview');
+    const photoInput = document.getElementById('photoInput');
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const file = document.getElementById('photoInput').files[0];
-    const uploader = document.getElementById('uploaderName').value.trim();
+    // Preview image before upload
+    photoInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          preview.src = e.target.result;
+          preview.style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+      }
+    });
 
-    if (!file) {
-      status.textContent = "❌ Please choose a file.";
-      return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = photoInput.files[0];
+      const uploaderName = document.getElementById('uploaderName').value.trim();
+
+      if (!file || !uploaderName) {
+        status.textContent = "❌ Please fill in all fields and select a photo.";
+        return;
+      }
+
+      try {
+        status.textContent = "Uploading...";
+        console.log('Starting upload process...');
+
+        // Upload file to Supabase Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+        console.log('Attempting to upload file:', fileName);
+
+        // Upload to storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('photos')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError);
+          throw uploadError;
+        }
+
+        console.log('File uploaded successfully:', uploadData);
+
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('photos')
+          .getPublicUrl(fileName);
+
+        console.log('Public URL generated:', publicUrl);
+
+        // Save photo info to database
+        const { data: insertData, error: dbError } = await supabase
+          .from('photos')
+          .insert([{ 
+            url: publicUrl, 
+            uploader: uploaderName,
+            created_at: new Date()
+          }])
+          .select();
+
+        if (dbError) {
+          console.error('Database insert error:', dbError);
+          // If database insert fails, try to delete the uploaded file
+          await supabase.storage
+            .from('photos')
+            .remove([fileName]);
+          throw dbError;
+        }
+
+        console.log('Photo info saved to database:', insertData);
+        status.textContent = "✅ Photo uploaded successfully!";
+        form.reset();
+        preview.style.display = 'none';
+        
+        // Refresh gallery
+        fetchPhotos();
+      } catch (error) {
+        console.error('Detailed error:', error);
+        if (error.message.includes('violates row-level security policy')) {
+          status.textContent = "❌ Upload failed: Permission denied. Please try again.";
+        } else {
+          status.textContent = `❌ Upload failed: ${error.message || 'Unknown error'}`;
+        }
+      }
+    });
+
+    // Fetch and display photos
+    async function fetchPhotos() {
+      try {
+        const { data: photos, error } = await supabase
+          .from('photos')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const gallery = document.getElementById('photoGallery');
+        gallery.innerHTML = '';
+
+        photos.forEach(photo => {
+          const photoElement = document.createElement('div');
+          photoElement.className = 'photo-item';
+          photoElement.innerHTML = `
+            <img src="${photo.url}" alt="Uploaded photo">
+            <p>Uploaded by: ${photo.uploader}</p>
+          `;
+          gallery.appendChild(photoElement);
+        });
+      } catch (error) {
+        console.error('Error fetching photos:', error);
+      }
     }
 
-    status.textContent = "Uploading...";
-
-    const result = await uploadToCloudinary(file);
-    if (result.success) {
-      status.textContent = "✅ Photo uploaded!";
-      form.reset();
-
-      // Optional: Save photo URL + uploader info to Firestore
-      // (to display photos later in gallery)
-      // Use your firebase.js Firestore addDoc code here if needed
-
-    } else {
-      status.textContent = `❌ Upload failed: ${result.error}`;
-    }
-  });
-</script>
-
+    // Initial load of photos
+    fetchPhotos();
+  </script>
 </body>
 </html>
