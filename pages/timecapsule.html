@@ -9,12 +9,105 @@
   <div class="container">
     <h1>⏳ Time Capsule</h1>
     <p>Leave a message for future Jimli (2028 maybe?)</p>
-    <form>
-      <input type="text" placeholder="Your Name" required><br>
-      <textarea rows="5" placeholder="Write your time capsule note..." required></textarea><br>
+
+    <form id="timeCapsuleForm">
+      <input type="text" id="name" placeholder="Your Name" required><br>
+      <textarea id="message" rows="5" placeholder="Write your time capsule note..." required></textarea><br>
       <button type="submit">Submit</button>
     </form>
+
+    <p id="statusMessage"></p>
+
+    <hr>
+    <h2>📝 Messages</h2>
+    <div id="notesContainer">Loading messages...</div>
+
     <a href="../index.html">← Back to Home</a>
   </div>
+
+  <!-- Firebase Logic -->
+  <script type="module">
+    import { submitNote } from "../firebase.js";
+    import {
+      getFirestore, collection, getDocs, query, orderBy
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+
+    // Same Firebase config as in firebase.js
+    const firebaseConfig = {
+      apiKey: "AIzaSyC0NUL_M4erIQ-XAdpgiga9SCBtjFawkDg",
+      authDomain: "jimliturnstwenty.firebaseapp.com",
+      projectId: "jimliturnstwenty",
+      storageBucket: "jimliturnstwenty.firebasestorage.app",
+      messagingSenderId: "208642834505",
+      appId: "1:208642834505:web:935636174185cb4f45ff98",
+      measurementId: "G-SQ2XJXDNBT"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const form = document.getElementById('timeCapsuleForm');
+    const nameInput = document.getElementById('name');
+    const messageInput = document.getElementById('message');
+    const statusMessage = document.getElementById('statusMessage');
+    const notesContainer = document.getElementById('notesContainer');
+
+    // Handle form submission
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = nameInput.value.trim();
+      const message = messageInput.value.trim();
+
+      if (name && message) {
+        statusMessage.textContent = "Submitting...";
+        const success = await submitNote(name, message);
+        if (success) {
+          statusMessage.textContent = "✅ Message saved! Thank you.";
+          form.reset();
+          loadNotes(); // Reload messages
+        } else {
+          statusMessage.textContent = "❌ Something went wrong.";
+        }
+      }
+    });
+
+    // Fetch and display messages
+    async function loadNotes() {
+      try {
+        const q = query(collection(db, "birthdayNotes"), orderBy("createdAt", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          notesContainer.innerHTML = "<p>No messages yet. Be the first!</p>";
+          return;
+        }
+
+        let html = "";
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          const name = data.name || "Anonymous";
+          const message = data.message || "";
+          const date = data.createdAt?.toDate().toLocaleString() || "";
+          html += `
+            <div class="note">
+              <p><strong>${name}</strong> <small>(${date})</small></p>
+              <p>${message}</p>
+              <hr>
+            </div>
+          `;
+        });
+
+        notesContainer.innerHTML = html;
+      } catch (error) {
+        notesContainer.innerHTML = "<p>Error loading messages.</p>";
+        console.error("Error fetching notes:", error);
+      }
+    }
+
+    // Initial load
+    loadNotes();
+  </script>
 </body>
 </html>
