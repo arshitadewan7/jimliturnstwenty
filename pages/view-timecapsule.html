@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Time Capsule Messages for Jimli 💌</title>
+  <link rel="stylesheet" href="../style.css" />
+  <style>
+    body {
+      background-color: #fff0f5;
+      font-family: 'Shadows Into Light', cursive;
+      color: #333;
+      margin: 0;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 3rem;
+      color: #ff69b4;
+      margin-bottom: 1rem;
+    }
+
+    .capsule-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+      padding: 0 1rem;
+    }
+
+    .capsule-card {
+      background-color: #fff;
+      border: 2px dashed #ffa6c9;
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .capsule-card h3 {
+      color: #c94f7c;
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+      font-size: 1.3rem;
+    }
+
+    .capsule-card p {
+      font-size: 1rem;
+      color: #555;
+    }
+
+    .loading {
+      font-size: 1.2rem;
+      margin-top: 3rem;
+      color: #999;
+    }
+
+    .date {
+      font-size: 0.9rem;
+      color: #888;
+      margin-top: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Time Capsule Messages for Jimli 💕</h1>
+  <p class="loading" id="loading">Loading time capsule messages...</p>
+
+  <div class="capsule-grid" id="capsuleGrid"></div>
+
+  <!-- Add Supabase JS library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://klnopxnruagklreaokdc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtsbm9weG5ydWFna2xyZWFva2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2NzY2OTUsImV4cCI6MjA2MzI1MjY5NX0.eKHGjD1_y6V2Bf3aiErcU6lDdoh7EnVuv4OIXu1oKwg';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const capsuleGrid = document.getElementById('capsuleGrid');
+    const loading = document.getElementById('loading');
+
+    async function fetchCapsuleMessages() {
+      try {
+        const { data, error } = await supabase
+          .from('timecapsule')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        loading.style.display = 'none';
+        
+        if (error) {
+          console.error('Error:', error);
+          capsuleGrid.innerHTML = '<p>Error loading time capsule messages.</p>';
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          capsuleGrid.innerHTML = '<p>No time capsule messages yet 😢</p>';
+          return;
+        }
+
+        capsuleGrid.innerHTML = '';
+        data.forEach((message, index) => {
+          const capsuleCard = document.createElement('div');
+          capsuleCard.className = 'capsule-card';
+          capsuleCard.style.animationDelay = `${index * 0.1}s`;
+          
+          const date = new Date(message.created_at).toLocaleDateString();
+          
+          capsuleCard.innerHTML = `
+            <h3>💌 ${message.name}</h3>
+            <p>${message.message}</p>
+            <p class="date">Left on: ${date}</p>
+          `;
+          capsuleGrid.appendChild(capsuleCard);
+        });
+      } catch (err) {
+        console.error('Error:', err);
+        capsuleGrid.innerHTML = '<p>Error loading time capsule messages.</p>';
+      }
+    }
+
+    fetchCapsuleMessages();
+    // Optional: Real-time updates
+    supabase.channel('public:timecapsule')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'timecapsule' }, fetchCapsuleMessages)
+      .subscribe();
+  </script>
+
+  <a href="../index.html" class="nav-link" style="margin-top: 2rem; display: inline-block;">← Back to Home</a>
+</body>
+</html> 
