@@ -48,10 +48,13 @@ nav a:hover {
 }
 
 .decor {
-  width: 200px;
-  margin-top: 2rem;
+  width: 400px;     /* Try increasing this to see if it changes */
+  height: auto;     /* Keeps aspect ratio */
   opacity: 0.8;
+  margin-top: 2rem;
 }
+
+
 
 /* ➕ Additions for form pages */
 
@@ -128,3 +131,14 @@ button:hover {
   transform: scale(1.05);
   background: #ffd6e8;
 }
+
+.decor-container {
+  display: flex;
+  gap: 100px; /* Space between images */
+}
+
+.decor {
+  width: 100px; /* or whatever size fits your layout */
+  height: auto;
+}
+

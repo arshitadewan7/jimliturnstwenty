@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Time Capsule Messages ⏳</title>
+  <link rel="stylesheet" href="../style.css" />
+  <style>
+    body {
+      background-color: #fff0f5;
+      font-family: 'Shadows Into Light', cursive;
+      color: #333;
+      margin: 0;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 3rem;
+      color: #ff69b4;
+      margin-bottom: 1rem;
+    }
+
+    .message-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+      padding: 0 1rem;
+    }
+
+    .message-card {
+      background-color: #ffffff;
+      border: 2px dashed #87cefa;
+      padding: 1.5rem;
+      border-radius: 16px;
+      box-shadow: 2px 4px 12px rgba(0, 0, 0, 0.1);
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.6s ease-out forwards;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message-card h3 {
+      color: #1e90ff;
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+      font-size: 1.3rem;
+    }
+
+    .message-card p {
+      font-size: 1rem;
+      color: #444;
+    }
+
+    .loading {
+      font-size: 1.2rem;
+      margin-top: 3rem;
+      color: #777;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>📜 Messages for Future Jimli</h1>
+  <p class="loading" id="loading">Retrieving your time capsule notes...</p>
+
+  <div class="message-grid" id="messageGrid"></div>
+
+  <!-- Firebase Logic -->
+  <script type="module">
+    import {
+      getFirestore, collection, getDocs, query, orderBy
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyC0NUL_M4erIQ-XAdpgiga9SCBtjFawkDg",
+      authDomain: "jimliturnstwenty.firebaseapp.com",
+      projectId: "jimliturnstwenty",
+      storageBucket: "jimliturnstwenty.appspot.com",
+      messagingSenderId: "208642834505",
+      appId: "1:208642834505:web:935636174185cb4f45ff98",
+      measurementId: "G-SQ2XJXDNBT"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const messageGrid = document.getElementById('messageGrid');
+    const loading = document.getElementById('loading');
+
+    async function fetchMessages() {
+      try {
+        const q = query(collection(db, "timeCapsule"), orderBy("timestamp", "desc"));
+        const querySnapshot = await getDocs(q);
+
+        loading.style.display = 'none';
+
+        if (querySnapshot.empty) {
+          messageGrid.innerHTML = '<p>No messages yet 🕰️</p>';
+          return;
+        }
+
+        querySnapshot.forEach((doc, index) => {
+          const data = doc.data();
+          const card = document.createElement('div');
+          card.className = 'message-card';
+          card.style.animationDelay = `${index * 0.1}s`;
+          card.innerHTML = `
+            <h3>🕊️ ${data.name}</h3>
+            <p>${data.message}</p>
+          `;
+          messageGrid.appendChild(card);
+        });
+      } catch (err) {
+        console.error('Error loading messages:', err);
+        loading.textContent = '❌ Failed to load messages.';
+      }
+    }
+
+    fetchMessages();
+  </script>
+
+</body>
+</html>
