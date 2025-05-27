@@ -4,6 +4,80 @@
   <meta charset="UTF-8">
   <title>Time Capsule</title>
   <link rel="stylesheet" href="../style.css">
+  <style>
+    body {
+      background-color: #fff0f5;
+      font-family: 'Shadows Into Light', cursive;
+      color: #333;
+      margin: 0;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 3rem;
+      color: #ff69b4;
+      margin-bottom: 1rem;
+    }
+
+    form {
+      background: white;
+      padding: 2rem;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      margin: 2rem 0;
+    }
+
+    input[type="text"],
+    textarea {
+      width: 100%;
+      padding: 0.8rem;
+      margin: 0.5rem 0;
+      border: 2px solid #ffa6c9;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 1rem;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    button {
+      background: #ff69b4;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.3s;
+      font-family: inherit;
+    }
+
+    button:hover {
+      background: #ff4da6;
+    }
+
+    #statusMessage {
+      margin-top: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .success {
+      color: #28a745;
+    }
+
+    .error {
+      color: #dc3545;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -11,103 +85,60 @@
     <p>Leave a message for future Jimli (2028 maybe?)</p>
 
     <form id="timeCapsuleForm">
-      <input type="text" id="name" placeholder="Your Name" required><br>
-      <textarea id="message" rows="5" placeholder="Write your time capsule note..." required></textarea><br>
+      <input type="text" id="name" placeholder="Your Name" required>
+      <textarea id="message" placeholder="Write your time capsule message..." required></textarea>
       <button type="submit">Submit</button>
     </form>
 
     <p id="statusMessage"></p>
 
-    <hr>
-    <h2>📝 Messages</h2>
-    <div id="notesContainer">Loading messages...</div>
-
-    <a href="../index.html">← Back to Home</a>
+    <a href="../index.html" class="nav-link">← Back to Home</a>
   </div>
 
-  <!-- Firebase Logic -->
-  <script type="module">
-    import { submitNote } from "../firebase.js";
-    import {
-      getFirestore, collection, getDocs, query, orderBy
-    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-
-    // Same Firebase config as in firebase.js
-    const firebaseConfig = {
-      apiKey: "AIzaSyC0NUL_M4erIQ-XAdpgiga9SCBtjFawkDg",
-      authDomain: "jimliturnstwenty.firebaseapp.com",
-      projectId: "jimliturnstwenty",
-      storageBucket: "jimliturnstwenty.firebasestorage.app",
-      messagingSenderId: "208642834505",
-      appId: "1:208642834505:web:935636174185cb4f45ff98",
-      measurementId: "G-SQ2XJXDNBT"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  <!-- Add Supabase JS library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://klnopxnruagklreaokdc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imtsbm9weG5ydWFna2xyZWFva2RjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc2NzY2OTUsImV4cCI6MjA2MzI1MjY5NX0.eKHGjD1_y6V2Bf3aiErcU6lDdoh7EnVuv4OIXu1oKwg';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const form = document.getElementById('timeCapsuleForm');
-    const nameInput = document.getElementById('name');
-    const messageInput = document.getElementById('message');
     const statusMessage = document.getElementById('statusMessage');
-    const notesContainer = document.getElementById('notesContainer');
 
-    // Handle form submission
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
+      const name = document.getElementById('name').value.trim();
+      const message = document.getElementById('message').value.trim();
 
-      const name = nameInput.value.trim();
-      const message = messageInput.value.trim();
+      if (!name || !message) {
+        statusMessage.textContent = "❌ Please fill in both fields.";
+        statusMessage.className = 'error';
+        return;
+      }
 
-      if (name && message) {
+      try {
         statusMessage.textContent = "Submitting...";
-        const success = await submitNote(name, message);
-        if (success) {
-          statusMessage.textContent = "✅ Message saved! Thank you.";
-          form.reset();
-          loadNotes(); // Reload messages
-        } else {
-          statusMessage.textContent = "❌ Something went wrong.";
-        }
+        statusMessage.className = '';
+
+        const { error } = await supabase
+          .from('timecapsule')
+          .insert([{ 
+            name: name, 
+            message: message,
+            created_at: new Date()
+          }]);
+
+        if (error) throw error;
+
+        statusMessage.textContent = "✅ Message saved! Thank you.";
+        statusMessage.className = 'success';
+        form.reset();
+      } catch (error) {
+        console.error('Error:', error);
+        statusMessage.textContent = "❌ Something went wrong. Please try again.";
+        statusMessage.className = 'error';
       }
     });
-
-    // Fetch and display messages
-    async function loadNotes() {
-      try {
-        const q = query(collection(db, "birthdayNotes"), orderBy("createdAt", "desc"));
-        const querySnapshot = await getDocs(q);
-
-        if (querySnapshot.empty) {
-          notesContainer.innerHTML = "<p>No messages yet. Be the first!</p>";
-          return;
-        }
-
-        let html = "";
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          const name = data.name || "Anonymous";
-          const message = data.message || "";
-          const date = data.createdAt?.toDate().toLocaleString() || "";
-          html += `
-            <div class="note">
-              <p><strong>${name}</strong> <small>(${date})</small></p>
-              <p>${message}</p>
-              <hr>
-            </div>
-          `;
-        });
-
-        notesContainer.innerHTML = html;
-      } catch (error) {
-        notesContainer.innerHTML = "<p>Error loading messages.</p>";
-        console.error("Error fetching notes:", error);
-      }
-    }
-
-    // Initial load
-    loadNotes();
   </script>
 </body>
 </html>
