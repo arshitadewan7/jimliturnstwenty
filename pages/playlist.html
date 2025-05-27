@@ -98,24 +98,48 @@
   </div>
 
   <script>
-    function addSong() {
-      const songInput = document.getElementById('songInput');
-      const nameInput = document.getElementById('nameInput');
+  // Load saved songs from localStorage
+  window.onload = function () {
+    const savedSongs = JSON.parse(localStorage.getItem("playlist")) || [];
+    const playlist = document.getElementById("playlist");
 
-      const song = songInput.value.trim();
-      const name = nameInput.value.trim();
-
-      if (song !== '' && name !== '') {
-        const li = document.createElement('li');
-        li.textContent = `${song} (added by ${name})`;
-        document.getElementById('playlist').appendChild(li);
-
-        songInput.value = '';
-        nameInput.value = '';
-      } else {
-        alert("Please enter both a song and your name!");
-      }
+    // Skip adding the default team songs if there's saved data
+    if (savedSongs.length > 0) {
+      playlist.innerHTML = ""; // Clear default list
     }
-  </script>
+
+    savedSongs.forEach(({ song, name }) => {
+      const li = document.createElement("li");
+      li.textContent = `${song} (added by ${name})`;
+      playlist.appendChild(li);
+    });
+  };
+
+  function addSong() {
+    const songInput = document.getElementById("songInput");
+    const nameInput = document.getElementById("nameInput");
+
+    const song = songInput.value.trim();
+    const name = nameInput.value.trim();
+
+    if (song !== "" && name !== "") {
+      const li = document.createElement("li");
+      li.textContent = `${song} (added by ${name})`;
+      document.getElementById("playlist").appendChild(li);
+
+      // Save to localStorage
+      const savedSongs = JSON.parse(localStorage.getItem("playlist")) || [];
+      savedSongs.push({ song, name });
+      localStorage.setItem("playlist", JSON.stringify(savedSongs));
+
+      // Clear inputs
+      songInput.value = "";
+      nameInput.value = "";
+    } else {
+      alert("Please enter both a song and your name!");
+    }
+  }
+</script>
+
 </body>
 </html>
